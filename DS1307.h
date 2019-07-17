@@ -23,9 +23,9 @@
 #define DS1307_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "Arduino.h"
+#include "Arduino.h"
 #else
-	#include "WProgram.h"
+#include "WProgram.h"
 #endif
 
 #define DS1307_ADDR_R	209
@@ -62,7 +62,7 @@ public:
 	uint16_t	year;
 	uint8_t		dow;
 
-		Time();
+	Time();
 };
 
 class DS1307_RAM
@@ -70,22 +70,22 @@ class DS1307_RAM
 public:
 	byte	cell[56];
 
-		DS1307_RAM();
+	DS1307_RAM();
 };
 
 class DS1307
 {
 public:
-		DS1307(uint8_t data_pin, uint8_t sclk_pin);
+	DS1307(uint8_t data_pin, uint8_t sclk_pin);
 	Time	getTime();
 	void	setTime(uint8_t hour, uint8_t min, uint8_t sec);
 	void	setDate(uint8_t date, uint8_t mon, uint16_t year);
 	void	setDOW(uint8_t dow);
 
-	char	*getTimeStr(uint8_t format=FORMAT_LONG);
-	char	*getDateStr(uint8_t slformat=FORMAT_LONG, uint8_t eformat=FORMAT_LITTLEENDIAN, char divider='.');
-	char	*getDOWStr(uint8_t format=FORMAT_LONG);
-	char	*getMonthStr(uint8_t format=FORMAT_LONG);
+	void	getTimeStr(char* output, uint8_t format = FORMAT_LONG);
+	void	getDateStr(char* output, uint8_t slformat = FORMAT_LONG, uint8_t eformat = FORMAT_LITTLEENDIAN, char divider = '.');
+	void	getDOWStr(char* output, uint8_t format = FORMAT_LONG);
+	void	getMonthStr(char* output, uint8_t format = FORMAT_LONG);
 
 	void	halt(bool value);
 	void	setOutput(bool enable);

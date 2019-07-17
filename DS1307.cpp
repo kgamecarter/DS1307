@@ -45,8 +45,8 @@ Time::Time()
 
 DS1307_RAM::DS1307_RAM()
 {
-	for (int i=0; i<56; i++)
-		cell[i]=0;
+	for (int i = 0; i < 56; i++)
+		cell[i] = 0;
 }
 
 DS1307::DS1307(uint8_t data_pin, uint8_t sclk_pin)
@@ -66,13 +66,13 @@ Time DS1307::getTime()
 	t.dow	= _burstArray[3];
 	t.date	= _decode(_burstArray[4]);
 	t.mon	= _decode(_burstArray[5]);
-	t.year	= _decodeY(_burstArray[6])+2000;
+	t.year	= _decodeY(_burstArray[6]) + 2000;
 	return t;
 }
 
 void DS1307::setTime(uint8_t hour, uint8_t min, uint8_t sec)
 {
-	if (((hour>=0) && (hour<24)) && ((min>=0) && (min<60)) && ((sec>=0) && (sec<60)))
+	if (((hour >= 0) && (hour < 24)) && ((min >= 0) && (min < 60)) && ((sec >= 0) && (sec < 60)))
 	{
 		_writeRegister(REG_HOUR, _encode(hour));
 		_writeRegister(REG_MIN, _encode(min));
@@ -82,7 +82,7 @@ void DS1307::setTime(uint8_t hour, uint8_t min, uint8_t sec)
 
 void DS1307::setDate(uint8_t date, uint8_t mon, uint16_t year)
 {
-	if (((date>0) && (date<=31)) && ((mon>0) && (mon<=12)) && ((year>=2000) && (year<3000)))
+	if (((date > 0) && (date <= 31)) && ((mon > 0) && (mon <= 12)) && ((year >= 2000) && (year < 3000)))
 	{
 		year -= 2000;
 		_writeRegister(REG_YEAR, _encode(year));
@@ -93,270 +93,266 @@ void DS1307::setDate(uint8_t date, uint8_t mon, uint16_t year)
 
 void DS1307::setDOW(uint8_t dow)
 {
-	if ((dow>0) && (dow<8))
+	if ((dow > 0) && (dow < 8))
 		_writeRegister(REG_DOW, dow);
 }
 
-char *DS1307::getTimeStr(uint8_t format)
+void DS1307::getTimeStr(char* output, uint8_t format)
 {
-	char *output= "xxxxxxxx";
 	Time t;
-	t=getTime();
-	if (t.hour<10)
-		output[0]=48;
+	t = getTime();
+	if (t.hour < 10)
+		output[0] = 48;
 	else
-		output[0]=char((t.hour / 10)+48);
-	output[1]=char((t.hour % 10)+48);
-	output[2]=58;
-	if (t.min<10)
-		output[3]=48;
+		output[0] = char((t.hour / 10) + 48);
+	output[1] = char((t.hour % 10) + 48);
+	output[2] = 58;
+	if (t.min < 10)
+		output[3] = 48;
 	else
-		output[3]=char((t.min / 10)+48);
-	output[4]=char((t.min % 10)+48);
-	output[5]=58;
-	if (format==FORMAT_SHORT)
-		output[5]=0;
+		output[3] = char((t.min / 10) + 48);
+	output[4] = char((t.min % 10) + 48);
+	output[5] = 58;
+	if (format == FORMAT_SHORT)
+		output[5] = 0;
 	else
 	{
-	if (t.sec<10)
-		output[6]=48;
-	else
-		output[6]=char((t.sec / 10)+48);
-	output[7]=char((t.sec % 10)+48);
-	output[8]=0;
+		if (t.sec < 10)
+			output[6] = 48;
+		else
+			output[6] = char((t.sec / 10) + 48);
+		output[7] = char((t.sec % 10) + 48);
+		output[8] = 0;
 	}
-	return output;
 }
 
-char *DS1307::getDateStr(uint8_t slformat, uint8_t eformat, char divider)
+void DS1307::getDateStr(char* output, uint8_t slformat, uint8_t eformat, char divider)
 {
-	char *output= "xxxxxxxxxx";
 	int yr, offset;
 	Time t;
-	t=getTime();
+	t = getTime();
 	switch (eformat)
 	{
-		case FORMAT_LITTLEENDIAN:
-			if (t.date<10)
-				output[0]=48;
+	case FORMAT_LITTLEENDIAN:
+		if (t.date < 10)
+			output[0] = 48;
+		else
+			output[0] = char((t.date / 10) + 48);
+		output[1] = char((t.date % 10) + 48);
+		output[2] = divider;
+		if (t.mon < 10)
+			output[3] = 48;
+		else
+			output[3] = char((t.mon / 10) + 48);
+		output[4] = char((t.mon % 10) + 48);
+		output[5] = divider;
+		if (slformat == FORMAT_SHORT)
+		{
+			yr = t.year - 2000;
+			if (yr < 10)
+				output[6] = 48;
 			else
-				output[0]=char((t.date / 10)+48);
-			output[1]=char((t.date % 10)+48);
-			output[2]=divider;
-			if (t.mon<10)
-				output[3]=48;
+				output[6] = char((yr / 10) + 48);
+			output[7] = char((yr % 10) + 48);
+			output[8] = 0;
+		}
+		else
+		{
+			yr = t.year;
+			output[6] = char((yr / 1000) + 48);
+			output[7] = char(((yr % 1000) / 100) + 48);
+			output[8] = char(((yr % 100) / 10) + 48);
+			output[9] = char((yr % 10) + 48);
+			output[10] = 0;
+		}
+		break;
+	case FORMAT_BIGENDIAN:
+		if (slformat == FORMAT_SHORT)
+			offset = 0;
+		else
+			offset = 2;
+		if (slformat == FORMAT_SHORT)
+		{
+			yr = t.year - 2000;
+			if (yr < 10)
+				output[0] = 48;
 			else
-				output[3]=char((t.mon / 10)+48);
-			output[4]=char((t.mon % 10)+48);
-			output[5]=divider;
-			if (slformat==FORMAT_SHORT)
-			{
-				yr=t.year-2000;
-				if (yr<10)
-					output[6]=48;
-				else
-					output[6]=char((yr / 10)+48);
-				output[7]=char((yr % 10)+48);
-				output[8]=0;
-			}
+				output[0] = char((yr / 10) + 48);
+			output[1] = char((yr % 10) + 48);
+			output[2] = divider;
+		}
+		else
+		{
+			yr = t.year;
+			output[0] = char((yr / 1000) + 48);
+			output[1] = char(((yr % 1000) / 100) + 48);
+			output[2] = char(((yr % 100) / 10) + 48);
+			output[3] = char((yr % 10) + 48);
+			output[4] = divider;
+		}
+		if (t.mon < 10)
+			output[3 + offset] = 48;
+		else
+			output[3 + offset] = char((t.mon / 10) + 48);
+		output[4 + offset] = char((t.mon % 10) + 48);
+		output[5 + offset] = divider;
+		if (t.date < 10)
+			output[6 + offset] = 48;
+		else
+			output[6 + offset] = char((t.date / 10) + 48);
+		output[7 + offset] = char((t.date % 10) + 48);
+		output[8 + offset] = 0;
+		break;
+	case FORMAT_MIDDLEENDIAN:
+		if (t.mon < 10)
+			output[0] = 48;
+		else
+			output[0] = char((t.mon / 10) + 48);
+		output[1] = char((t.mon % 10) + 48);
+		output[2] = divider;
+		if (t.date < 10)
+			output[3] = 48;
+		else
+			output[3] = char((t.date / 10) + 48);
+		output[4] = char((t.date % 10) + 48);
+		output[5] = divider;
+		if (slformat == FORMAT_SHORT)
+		{
+			yr = t.year - 2000;
+			if (yr < 10)
+				output[6] = 48;
 			else
-			{
-				yr=t.year;
-				output[6]=char((yr / 1000)+48);
-				output[7]=char(((yr % 1000) / 100)+48);
-				output[8]=char(((yr % 100) / 10)+48);
-				output[9]=char((yr % 10)+48);
-				output[10]=0;
-			}
-			break;
-		case FORMAT_BIGENDIAN:
-			if (slformat==FORMAT_SHORT)
-				offset=0;
-			else
-				offset=2;
-			if (slformat==FORMAT_SHORT)
-			{
-				yr=t.year-2000;
-				if (yr<10)
-					output[0]=48;
-				else
-					output[0]=char((yr / 10)+48);
-				output[1]=char((yr % 10)+48);
-				output[2]=divider;
-			}
-			else
-			{
-				yr=t.year;
-				output[0]=char((yr / 1000)+48);
-				output[1]=char(((yr % 1000) / 100)+48);
-				output[2]=char(((yr % 100) / 10)+48);
-				output[3]=char((yr % 10)+48);
-				output[4]=divider;
-			}
-			if (t.mon<10)
-				output[3+offset]=48;
-			else
-				output[3+offset]=char((t.mon / 10)+48);
-			output[4+offset]=char((t.mon % 10)+48);
-			output[5+offset]=divider;
-			if (t.date<10)
-				output[6+offset]=48;
-			else
-				output[6+offset]=char((t.date / 10)+48);
-			output[7+offset]=char((t.date % 10)+48);
-			output[8+offset]=0;
-			break;
-		case FORMAT_MIDDLEENDIAN:
-			if (t.mon<10)
-				output[0]=48;
-			else
-				output[0]=char((t.mon / 10)+48);
-			output[1]=char((t.mon % 10)+48);
-			output[2]=divider;
-			if (t.date<10)
-				output[3]=48;
-			else
-				output[3]=char((t.date / 10)+48);
-			output[4]=char((t.date % 10)+48);
-			output[5]=divider;
-			if (slformat==FORMAT_SHORT)
-			{
-				yr=t.year-2000;
-				if (yr<10)
-					output[6]=48;
-				else
-					output[6]=char((yr / 10)+48);
-				output[7]=char((yr % 10)+48);
-				output[8]=0;
-			}
-			else
-			{
-				yr=t.year;
-				output[6]=char((yr / 1000)+48);
-				output[7]=char(((yr % 1000) / 100)+48);
-				output[8]=char(((yr % 100) / 10)+48);
-				output[9]=char((yr % 10)+48);
-				output[10]=0;
-			}
-			break;
+				output[6] = char((yr / 10) + 48);
+			output[7] = char((yr % 10) + 48);
+			output[8] = 0;
+		}
+		else
+		{
+			yr = t.year;
+			output[6] = char((yr / 1000) + 48);
+			output[7] = char(((yr % 1000) / 100) + 48);
+			output[8] = char(((yr % 100) / 10) + 48);
+			output[9] = char((yr % 10) + 48);
+			output[10] = 0;
+		}
+		break;
 	}
-	return output;
 }
 
-char *DS1307::getDOWStr(uint8_t format)
+void DS1307::getDOWStr(char* output, uint8_t format)
 {
-	char *output= "xxxxxxxxx";
 	Time t;
-	t=getTime();
+	t = getTime();
+	const char* result;
 	switch (t.dow)
 	{
-		case MONDAY:
-			output="Monday";
-			break;
-		case TUESDAY:
-			output="Tuesday";
-			break;
-		case WEDNESDAY:
-			output="Wednesday";
-			break;
-		case THURSDAY:
-			output="Thursday";
-			break;
-		case FRIDAY:
-			output="Friday";
-			break;
-		case SATURDAY:
-			output="Saturday";
-			break;
-		case SUNDAY:
-			output="Sunday";
-			break;
-	}     
-	if (format==FORMAT_SHORT)
-		output[3]=0;
-	return output;
+	case MONDAY:
+		result = "Monday";
+		break;
+	case TUESDAY:
+		result = "Tuesday";
+		break;
+	case WEDNESDAY:
+		result = "Wednesday";
+		break;
+	case THURSDAY:
+		result = "Thursday";
+		break;
+	case FRIDAY:
+		result = "Friday";
+		break;
+	case SATURDAY:
+		result = "Saturday";
+		break;
+	case SUNDAY:
+		result = "Sunday";
+		break;
+	}
+	strcpy(output, result);
+	if (format == FORMAT_SHORT)
+		output[3] = 0;
 }
 
-char *DS1307::getMonthStr(uint8_t format)
+void DS1307::getMonthStr(char* output, uint8_t format)
 {
-	char *output= "xxxxxxxxx";
 	Time t;
-	t=getTime();
+	t = getTime();
+	const char* result;
 	switch (t.mon)
 	{
-		case 1:
-			output="January";
-			break;
-		case 2:
-			output="February";
-			break;
-		case 3:
-			output="March";
-			break;
-		case 4:
-			output="April";
-			break;
-		case 5:
-			output="May";
-			break;
-		case 6:
-			output="June";
-			break;
-		case 7:
-			output="July";
-			break;
-		case 8:
-			output="August";
-			break;
-		case 9:
-			output="September";
-			break;
-		case 10:
-			output="October";
-			break;
-		case 11:
-			output="November";
-			break;
-		case 12:
-			output="December";
-			break;
-	}     
-	if (format==FORMAT_SHORT)
-		output[3]=0;
-	return output;
+	case 1:
+		result = "January";
+		break;
+	case 2:
+		result = "February";
+		break;
+	case 3:
+		result = "March";
+		break;
+	case 4:
+		result = "April";
+		break;
+	case 5:
+		result = "May";
+		break;
+	case 6:
+		result = "June";
+		break;
+	case 7:
+		result = "July";
+		break;
+	case 8:
+		result = "August";
+		break;
+	case 9:
+		result = "September";
+		break;
+	case 10:
+		result = "October";
+		break;
+	case 11:
+		result = "November";
+		break;
+	case 12:
+		result = "December";
+		break;
+	}
+	strcpy(output, result);
+	if (format == FORMAT_SHORT)
+		output[3] = 0;
 }
 
 void DS1307::halt(bool enable)
 {
-  uint8_t _reg = _readRegister(REG_SEC);
-  _reg &= ~(1 << 7);
-  _reg |= (enable << 7);
-  _writeRegister(REG_SEC, _reg);
+	uint8_t _reg = _readRegister(REG_SEC);
+	_reg &= ~(1 << 7);
+	_reg |= (enable << 7);
+	_writeRegister(REG_SEC, _reg);
 }
 
 void DS1307::setOutput(bool enable)
 {
-  uint8_t _reg = _readRegister(REG_CON);
-  _reg &= ~(1 << 7);
-  _reg |= (enable << 7);
-  _writeRegister(REG_CON, _reg);
+	uint8_t _reg = _readRegister(REG_CON);
+	_reg &= ~(1 << 7);
+	_reg |= (enable << 7);
+	_writeRegister(REG_CON, _reg);
 }
 
 
 void DS1307::enableSQW(bool enable)
 {
-  uint8_t _reg = _readRegister(REG_CON);
-  _reg &= ~(1 << 4);
-  _reg |= (enable << 4);
-  _writeRegister(REG_CON, _reg);
+	uint8_t _reg = _readRegister(REG_CON);
+	_reg &= ~(1 << 4);
+	_reg |= (enable << 4);
+	_writeRegister(REG_CON, _reg);
 }
 
 void DS1307::setSQWRate(int rate)
 {
-  uint8_t _reg = _readRegister(REG_CON);
-  _reg &= ~(3);
-  _reg |= (rate);
-  _writeRegister(REG_CON, _reg);
+	uint8_t _reg = _readRegister(REG_CON);
+	_reg &= ~(3);
+	_reg |= (rate);
+	_writeRegister(REG_CON, _reg);
 }
 
 /* Private */
@@ -404,7 +400,7 @@ void	DS1307::_waitForAck()
 {
 	pinMode(_sda_pin, INPUT);
 	digitalWrite(_scl_pin, HIGH);
-	while (_sda_pin==LOW) {}
+	while (_sda_pin == LOW) {}
 	digitalWrite(_scl_pin, LOW);
 }
 
@@ -419,7 +415,7 @@ uint8_t DS1307::_readByte()
 	{
 		digitalWrite(_scl_pin, HIGH);
 		currentBit = digitalRead(_sda_pin);
-		value |= (currentBit << 7-i);
+		value |= (currentBit << 7 - i);
 		delayMicroseconds(1);
 		digitalWrite(_scl_pin, LOW);
 	}
@@ -433,7 +429,7 @@ void DS1307::_writeByte(uint8_t value)
 
 uint8_t DS1307::_readRegister(uint8_t reg)
 {
-	uint8_t	readValue=0;
+	uint8_t	readValue = 0;
 
 	_sendStart(DS1307_ADDR_W);
 	_waitForAck();
@@ -469,10 +465,10 @@ void DS1307::_burstRead()
 	_sendStart(DS1307_ADDR_R);
 	_waitForAck();
 
-	for (int i=0; i<8; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		_burstArray[i] = _readByte();
-		if (i<7)
+		if (i < 7)
 			_sendAck();
 		else
 			_sendNack();
@@ -489,11 +485,11 @@ uint8_t	DS1307::_decode(uint8_t value)
 
 uint8_t DS1307::_decodeH(uint8_t value)
 {
-  if (value & 128)
-    value = (value & 15) + (12 * ((value & 32) >> 5));
-  else
-    value = (value & 15) + (10 * ((value & 48) >> 4));
-  return value;
+	if (value & 128)
+		value = (value & 15) + (12 * ((value & 32) >> 5));
+	else
+		value = (value & 15) + (10 * ((value & 48) >> 4));
+	return value;
 }
 
 uint8_t	DS1307::_decodeY(uint8_t value)
@@ -515,7 +511,7 @@ void DS1307::writeBuffer(DS1307_RAM r)
 	_writeByte(8);
 	_waitForAck();
 
-	for (int i=0; i<56; i++)
+	for (int i = 0; i < 56; i++)
 	{
 		_writeByte(r.cell[i]);
 		_waitForAck();
@@ -536,10 +532,10 @@ DS1307_RAM DS1307::readBuffer()
 	_sendStart(DS1307_ADDR_R);
 	_waitForAck();
 
-	for (int i=0; i<56; i++)
+	for (int i = 0; i < 56; i++)
 	{
 		r.cell[i] = _readByte();
-		if (i<55)
+		if (i < 55)
 			_sendAck();
 		else
 			_sendNack();
@@ -551,7 +547,7 @@ DS1307_RAM DS1307::readBuffer()
 
 void DS1307::poke(uint8_t addr, uint8_t value)
 {
-	if ((addr >=0) && (addr<=55))
+	if ((addr >= 0) && (addr <= 55))
 	{
 		addr += 8;
 		_sendStart(DS1307_ADDR_W);
@@ -566,7 +562,7 @@ void DS1307::poke(uint8_t addr, uint8_t value)
 
 uint8_t DS1307::peek(uint8_t addr)
 {
-	if ((addr >=0) && (addr<=55))
+	if ((addr >= 0) && (addr <= 55))
 	{
 		uint8_t readValue;
 
